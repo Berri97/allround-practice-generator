@@ -308,7 +308,7 @@ st.caption("Practice the fourth-distance selection in an Allround Combination. B
 
 with st.sidebar:
     st.header("Create a case")
-    with st.form("case_settings"):
+    with st.container():
         gender_label = st.radio("Category", ["Men", "Women"], horizontal=True)
         gender = gender_label.lower()
         presets = gen.DISTANCE_PRESETS[gender]
@@ -336,7 +336,7 @@ with st.sidebar:
         incident_n = st.number_input("Number of incidents", min_value=1, max_value=4, value=2,
                                      disabled=not incidents, step=1)
         seed_text = st.text_input("Case number (optional)", placeholder="Blank = new random case")
-        submitted = st.form_submit_button("Generate practice case", type="primary", use_container_width=True)
+        submitted = st.button("Generate practice case", type="primary", use_container_width=True)
 
     st.caption("Generated cases are fictional. Always check applicable ISU rules and competition documents.")
 
