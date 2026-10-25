@@ -273,8 +273,7 @@ def ask_integer(
             return value
 
         print(
-            f"Enter a number from {minimum} "
-            f"en maximaal {maximum}."
+            f"Enter a number from {minimum} to {maximum}."
         )
 
 
@@ -389,8 +388,8 @@ def enter_distances_manually() -> list[int]:
 
     while True:
         raw_value = input(
-            "Voer precies vier afstanden in, gescheiden door komma's\n"
-            "Bijvoorbeeld 500,3000,1500,5000: "
+            "Enter exactly four distances, separated by commas.\n"
+            "For example, 500,3000,1500,5000: "
         ).strip()
 
         try:
@@ -420,8 +419,8 @@ def enter_distances_manually() -> list[int]:
             continue
 
         print(
-            "Let op: bij handmatige invoer controleert het script alleen "
-            "of de afstanden technisch ondersteund worden."
+            "Note: With manual distance entry, the program only checks "
+            "if the distances are supported."
         )
         return distances
 
@@ -435,7 +434,7 @@ def choose_tie_scenario() -> TieScenario:
     print("5. Tie around the selection cut-off")
 
     choice = ask_choice(
-        "Maak een keuze [1-5]: ",
+        "Choose an option [1-5]: ",
         {"1", "2", "3", "4", "5"},
     )
 
@@ -461,20 +460,20 @@ def build_config() -> TournamentConfig:
     )
 
     number_of_skaters = ask_integer(
-        f"\nHow many Skaters? [10-{len(available_names)}]: ",
+        f"\nHow many skaters? [10-{len(available_names)}]: ",
         10,
         len(available_names),
     )
 
     qualification_limit = ask_integer(
-        "How many Skaters may compete in the fourth distance? "
+        "How many skaters may compete in the fourth distance? "
         f"[2-{number_of_skaters - 2}]: ",
         2,
         number_of_skaters - 2,
     )
 
     reserve_count = ask_integer(
-        "How many reserve Skaters should be shown? "
+        "How many reserve skaters should be shown? "
         f"[0-{number_of_skaters - qualification_limit}]: ",
         0,
         number_of_skaters - qualification_limit,
@@ -496,8 +495,8 @@ def build_config() -> TournamentConfig:
     if apply_overall_rank_limit:
         minimum_rank_limit = qualification_limit
         overall_rank_limit = ask_integer(
-            "Only Skaters ranked within the top "
-            " of the classification after three distances are eligible. Enter X: "
+            "Only skaters within the top X of the classification after three "
+            "distances are eligible. Enter X: "
             f"[{minimum_rank_limit}-{number_of_skaters}]: ",
             minimum_rank_limit,
             number_of_skaters,
@@ -521,9 +520,8 @@ def build_config() -> TournamentConfig:
             )
         else:
             print(
-                "\nLet op: de klasslimiet omvat alle deelnemers. "
-                "A Skater outside the top-X can therefore not be "
-                "generated."
+                "\nNote: The top-X limit includes all skaters. "
+                "It is therefore not possible to create a skater outside this limit."
             )
 
     tie_scenario = choose_tie_scenario()
@@ -538,9 +536,8 @@ def build_config() -> TournamentConfig:
         )
 
     seed = ask_optional_integer(
-        "\nNummer van de oefencasus "
-        "(zelfde nummer geeft steeds dezelfde uitslag), "
-        "of druk op Enter voor een nieuwe randome casus: "
+        "\nCase number (same number gives the same results), "
+        "or press Enter for a random case: "
     )
 
     simulate_incidents = ask_yes_no(
@@ -631,7 +628,7 @@ def generate_time(
 
     if distance not in reference_times:
         raise ValueError(
-            f"Geen referentietijd ingesteld voor {distance} meter."
+            f"No reference time is available for {distance} m."
         )
 
     base_time = reference_times[distance]
@@ -823,7 +820,7 @@ def create_initial_skaters_with_selection_challenge(
             return candidate
 
     if fallback is None:
-        raise RuntimeError("Kon geen deelnemersveld genereren.")
+        raise RuntimeError("Could not generate a group of skaters.")
 
     return fallback
 
@@ -854,10 +851,10 @@ def international_top_x_trap_diagnostics(
             and lr <= qualification_limit
         ):
             messages.append(
-                f"{skater.name}: rank {cr} in het tussenklassement "
-                f"(outside top-{overall_rank_limit}), maar rank {lr} "
-                f"op de in longest distance (top-{qualification_limit}). "
-                "Not eligible for selection because of the classification limit."
+                f"{skater.name}: rank {cr} in the classification after three distances "
+                f"(outside top {overall_rank_limit}), but rank {lr} "
+                f"in the longest completed distance (top {qualification_limit}). "
+                "Not eligible because of the top-X classification restriction."
             )
 
     return sorted(messages)
@@ -889,13 +886,13 @@ def fourth_distance_selection_diagnostics(
 
         if cr <= qualification_limit < lr:
             messages.append(
-                f"{skater.name}: top-{qualification_limit} klassement "
-                f"({cr}); not top-{qualification_limit} in longest distance ({lr})."
+                f"{skater.name}: top {qualification_limit} in the classification "
+                f"(rank {cr}), but not in the longest distance (rank {lr})."
             )
         elif lr <= qualification_limit < cr:
             messages.append(
-                f"{skater.name}: top-{qualification_limit} in longest distance "
-                f"({lr}); not top-{qualification_limit} in classification ({cr})."
+                f"{skater.name}: top {qualification_limit} in the longest distance "
+                f"(rank {lr}), but not in the classification (rank {cr})."
             )
 
     return sorted(messages)
@@ -939,30 +936,29 @@ def apply_incident_to_skater(
                 f"{d} m" for d in distances[distance_index + 1:]
             )
             return (
-                f"{skater.name} (bib {skater.bib}) does not start in the "
-                f"de {distance} m: DNS. De rijder mag daarna niet meer "
-                f"starten; de volgende afstanden worden als '-' weergegeven "
-                f"({following})."
+                f"{skater.name} (bib {skater.bib}) did not start the "
+                f"{distance} m: DNS. The skater cannot start in the following "
+                f"distances. These distances are shown as '-' ({following})."
             )
 
         return (
-            f"{skater.name} (bib {skater.bib}) does not start in the "
-            f"de {distance} m: DNS."
+            f"{skater.name} (bib {skater.bib}) did not start the "
+            f"{distance} m: DNS."
         )
 
     if status == "DNF":
         skater.statuses[distance] = "DNF"
         skater.times[distance] = None
         return (
-            f"{skater.name} (bib {skater.bib}) finisht niet op "
-            f"de {distance} m: DNF."
+            f"{skater.name} (bib {skater.bib}) did not finish the "
+            f"{distance} m: DNF."
         )
 
     if status == "DQ":
         skater.statuses[distance] = "DQ"
         return (
-            f"{skater.name} (bib {skater.bib}) wordt "
-            f"gediskwalificeerd op de {distance} m: DQ."
+            f"{skater.name} (bib {skater.bib}) was disqualified "
+            f"in the {distance} m: DQ."
         )
 
     # WDR wordt alleen vermeld op de afstand waarvoor de rijder al
@@ -983,15 +979,14 @@ def apply_incident_to_skater(
             f"{d} m" for d in distances[distance_index + 1:]
         )
         return (
-            f"{skater.name} (bib {skater.bib}) trekt zich terug voor "
-            f"de {distance} m after having been entered on the start list: WDR. "
-            f"Subsequent distances are shown as '-' "
-            f"({following})."
+            f"{skater.name} (bib {skater.bib}) withdrew from the "
+            f"{distance} m after being entered on the start list: WDR. "
+            f"The following distances are shown as '-' ({following})."
         )
 
     return (
-        f"{skater.name} (bib {skater.bib}) trekt zich terug voor "
-        f"de {distance} m after having been entered on the start list: WDR."
+        f"{skater.name} (bib {skater.bib}) withdrew from the "
+        f"{distance} m after being entered on the start list: WDR."
     )
 
 
@@ -1244,8 +1239,7 @@ def force_classification_tie(
         or skater_b.total_points_after_3 is None
     ):
         raise ValueError(
-            "Beide rijders moeten een geldig klassement na drie "
-            "distances."
+            "Both skaters must have a valid classification after three distances."
         )
 
     current_time_a = skater_a.times[third_distance]
@@ -1325,8 +1319,8 @@ def force_classification_tie(
 
     if not shared_totals:
         raise ValueError(
-            "Deze combinatie van rijders kan binnen een realistische "
-            "tijdcorrectie niet exact ex aequo worden gemaakt."
+            "These skaters cannot be given exactly the same points "
+            "with a realistic time adjustment."
         )
 
     best_total = min(
@@ -1381,7 +1375,7 @@ def select_closest_classification_pair(
     )
 
     if len(eligible) < 2:
-        raise ValueError("Niet genoeg valid rijders voor een ex aequo.")
+        raise ValueError("Not enough eligible skaters to create a tie.")
 
     candidates: list[tuple[float, float, Skater, Skater]] = []
     third_distance = distances[2]
@@ -1459,7 +1453,7 @@ def select_closest_classification_pair(
 
     if not candidates:
         raise ValueError(
-            "Geen realistisch paar gevonden voor een klassementsex-aequo."
+            "No suitable pair found to create a realistic tie in the classification."
         )
 
     candidates.sort(key=lambda item: (item[0], item[1]))
@@ -1734,7 +1728,7 @@ def select_closest_race_pair(
 
     if len(eligible) < 2:
         raise ValueError(
-            "Niet genoeg valid rijders voor een ex aequo in de uitslag."
+            "Not enough eligible skaters to create a tie in the distance result."
         )
 
     return min(
@@ -1765,7 +1759,7 @@ def select_skaters_near_boundary(
 
     if len(eligible) < 2:
         raise ValueError(
-            "Niet genoeg valid rijders voor een ex aequo rond de grens."
+            "Not enough eligible skaters to create a tie near the selection cut-off."
         )
 
     index_a = max(
@@ -1790,8 +1784,8 @@ def apply_tie_scenario(
 
     if len(eligible) < 2:
         messages.append(
-            "Ex-aequoscenario kon niet worden toegepast: "
-            "too few eligible Skaters."
+            "The requested tie scenario could not be applied: "
+            "not enough eligible skaters."
         )
         return messages
 
@@ -1857,7 +1851,7 @@ def apply_tie_scenario(
                     )
                     messages.append(
                         f"Tie in the classification after three distances: "
-                        f"{skater_a.name} en {skater_b.name} "
+                        f"{skater_a.name} and {skater_b.name} "
                         f"(rank {skater_a.overall_rank_after_3})."
                     )
             except ValueError:
@@ -1911,15 +1905,15 @@ def apply_tie_scenario(
                 successful_race_pairs.append((skater_a, skater_b))
                 messages.append(
                     f"Tie in the {longest_completed_distance} m: "
-                    f"{skater_a.name} en {skater_b.name} "
+                    f"{skater_a.name} and {skater_b.name} "
                     f"(rank "
                     f"{skater_a.distance_ranks[longest_completed_distance]})."
                 )
 
     if not messages:
         messages.append(
-            "Binnen de top van de relevante ranglijsten kon in deze casus "
-            "no realistic forced tie could be generated."
+            "No realistic tie could be created among the top skaters "
+            "for this case."
         )
 
     return messages
@@ -2079,7 +2073,7 @@ def find_skater_by_bib(
         if skater.bib == bib:
             return skater
 
-    raise ValueError(f"Geen rijder gevonden met bib {bib}.")
+    raise ValueError(f"No skater found with bib {bib}.")
 
 
 def show_available_skaters(
@@ -2099,12 +2093,12 @@ def choose_two_skaters(
 
     while True:
         bib_a = ask_integer(
-            "\nBib van de eerste rijder: ",
+            "\nBib number of the first skater: ",
             min(skater.bib for skater in skaters),
             max(skater.bib for skater in skaters),
         )
         bib_b = ask_integer(
-            "Bib van de tweede rijder: ",
+            "Bib number of the second skater: ",
             min(skater.bib for skater in skaters),
             max(skater.bib for skater in skaters),
         )
@@ -2140,7 +2134,7 @@ def force_classification_tie_after_2(
         or skater_b.total_points_after_2 is None
     ):
         raise ValueError(
-            "Beide rijders moeten een geldig klassement na twee distances."
+            "Both skaters must have a valid classification after two distances."
         )
 
     current_time_a = skater_a.times[second_distance]
@@ -2148,7 +2142,7 @@ def force_classification_tie_after_2(
 
     if current_time_a is None or current_time_b is None:
         raise ValueError(
-            "Beide rijders moeten een valid tijd op de tweede afstand hebben."
+            "Both skaters must have a valid time in the second distance."
         )
 
     target_points = round(
@@ -2164,7 +2158,7 @@ def force_classification_tie_after_2(
 
     if first_points_a is None or first_points_b is None:
         raise ValueError(
-            "Beide rijders moeten een valid eerste afstand hebben."
+            "Both skaters must have a valid result in the first distance."
         )
 
     required_time_a = round(
@@ -2196,8 +2190,8 @@ def force_classification_tie_after_2(
         or abs(required_time_b - current_time_b) > maximum_adjustment
     ):
         raise ValueError(
-            "Deze twee rijders kunnen niet realistisch ex aequo worden gemaakt "
-            "na twee afstanden. Kies twee rijders die dichter bij elkaar staan."
+            "These two skaters cannot realistically be tied after two distances. "
+            "Choose skaters whose points are closer together."
         )
 
     skater_a.statuses[second_distance] = "OK"
@@ -2246,7 +2240,7 @@ def move_skater_to_distance_position(
     Daardoor betekent rank 5: vijfde plaats na opnieuw invoegen.
     """
     if distance not in skater.times:
-        raise ValueError("Deze afstand hoort niet bij de wedstrijd.")
+        raise ValueError("This distance is not part of the competition.")
 
     other_valid_skaters = [
         other
@@ -2261,7 +2255,7 @@ def move_skater_to_distance_position(
     if not other_valid_skaters:
         if target_position != 1:
             raise ValueError(
-                "Er zijn geen andere valid tijden; alleen rank 1 is mogelijk."
+                "There are no other valid times; only rank 1 is possible."
             )
 
         current_time = skater.times.get(distance)
@@ -2274,7 +2268,7 @@ def move_skater_to_distance_position(
 
     if not 1 <= target_position <= maximum_position:
         raise ValueError(
-            f"Kies een rank tussen 1 en {maximum_position}."
+            f"Choose a rank between 1 and {maximum_position}."
         )
 
     sorted_centiseconds = sorted(
@@ -2319,7 +2313,7 @@ def move_skater_to_distance_position(
             new_centiseconds = faster_time + 1
 
     if new_centiseconds <= 0:
-        raise ValueError("De berekende tijd is niet geldig.")
+        raise ValueError("The calculated time is not valid.")
 
     skater.statuses[distance] = "OK"
     skater.times[distance] = new_centiseconds / 100
@@ -2395,19 +2389,19 @@ def manual_edit_menu(
     """
     while True:
         print("\n" + "=" * 92)
-        print("UITSLAGEN HANDMATIG AANPASSEN")
+        print("EDIT RESULTS MANUALLY")
         print("=" * 92)
         print("1. Add a tie in the classification after two distances")
         print("2. Add a tie in the classification after three distances")
         print("3. Add a tie in the longest completed distance")
-        print("4. Een individuele tijd handmatig wijzigen")
-        print("5. Een status wijzigen: OK / DNS / DNF / DQ / WDR")
+        print("4. Change one skater's time")
+        print("5. Change a status: OK / DNS / DNF / DQ / WDR")
         print("6. Change a Skater’s rank in a distance")
-        print("7. Volledig overzicht opnieuw tonen")
-        print("0. Finish editing met aanpassen")
+        print("7. Show all results and standings again")
+        print("0. Finish editing")
 
         choice = ask_choice(
-            "Maak een keuze [0-7]: ",
+            "Choose an option [0-7]: ",
             {"0", "1", "2", "3", "4", "5", "6", "7"},
         )
 
@@ -2443,36 +2437,36 @@ def manual_edit_menu(
             elif choice == "4":
                 show_available_skaters(skaters)
                 bib = ask_integer(
-                    "Bib van de rijder: ",
+                    "Skater bib number: ",
                     min(skater.bib for skater in skaters),
                     max(skater.bib for skater in skaters),
                 )
                 skater = find_skater_by_bib(skaters, bib)
 
                 print(
-                    "Distanceen: "
+                    "Distances: "
                     + ", ".join(str(distance) for distance in config.distances)
                 )
                 distance = ask_integer(
-                    "Distance die je wilt wijzigen: ",
+                    "Distance to edit: ",
                     min(config.distances),
                     max(config.distances),
                 )
 
                 if distance not in config.distances:
-                    raise ValueError("Deze afstand hoort niet bij de wedstrijd.")
+                    raise ValueError("This distance is not part of the competition.")
 
                 raw_time = input(
-                    "New time in seconden, bijvoorbeeld 117.42: "
+                    "New time in seconds, for example 117.42: "
                 ).strip()
 
                 try:
                     new_time = float(raw_time)
                 except ValueError as error:
-                    raise ValueError("Voer een valid tijd in seconden in.") from error
+                    raise ValueError("Enter a valid time in seconds.") from error
 
                 if new_time <= 0:
-                    raise ValueError("De tijd moet groter zijn dan nul.")
+                    raise ValueError("The time must be greater than zero.")
 
                 skater.statuses[distance] = "OK"
                 skater.times[distance] = round(new_time, 2)
@@ -2480,27 +2474,27 @@ def manual_edit_menu(
             elif choice == "5":
                 show_available_skaters(skaters)
                 bib = ask_integer(
-                    "Bib van de rijder: ",
+                    "Skater bib number: ",
                     min(skater.bib for skater in skaters),
                     max(skater.bib for skater in skaters),
                 )
                 skater = find_skater_by_bib(skaters, bib)
 
                 print(
-                    "Distanceen: "
+                    "Distances: "
                     + ", ".join(str(distance) for distance in config.distances)
                 )
                 distance = ask_integer(
-                    "Distance waarop je de status wilt wijzigen: ",
+                    "Distance for the status change: ",
                     min(config.distances),
                     max(config.distances),
                 )
 
                 if distance not in config.distances:
-                    raise ValueError("Deze afstand hoort niet bij de wedstrijd.")
+                    raise ValueError("This distance is not part of the competition.")
 
                 status_choice = ask_choice(
-                    "Nieuwe status [OK/DNS/DNF/DQ/WDR]: ",
+                    "New status [OK/DNS/DNF/DQ/WDR]: ",
                     {"ok", "dns", "dnf", "dq", "wdr"},
                 ).upper()
 
@@ -2518,24 +2512,24 @@ def manual_edit_menu(
                 show_available_skaters(skaters)
 
                 bib = ask_integer(
-                    "Bib van de rijder: ",
+                    "Skater bib number: ",
                     min(skater.bib for skater in skaters),
                     max(skater.bib for skater in skaters),
                 )
                 skater = find_skater_by_bib(skaters, bib)
 
                 print(
-                    "Distanceen: "
+                    "Distances: "
                     + ", ".join(str(distance) for distance in config.distances)
                 )
                 distance = ask_integer(
-                    "Distance waarop je de rank wilt wijzigen: ",
+                    "Distance for the rank change: ",
                     min(config.distances),
                     max(config.distances),
                 )
 
                 if distance not in config.distances:
-                    raise ValueError("Deze afstand hoort niet bij de wedstrijd.")
+                    raise ValueError("This distance is not part of the competition.")
 
                 valid_others = [
                     other
@@ -2549,7 +2543,7 @@ def manual_edit_menu(
                 maximum_position = len(valid_others) + 1
 
                 target_position = ask_integer(
-                    f"Nieuwe rank [1-{maximum_position}]: ",
+                    f"New rank [1-{maximum_position}]: ",
                     1,
                     maximum_position,
                 )
@@ -2562,15 +2556,14 @@ def manual_edit_menu(
                 )
 
                 print(
-                    f"{skater.name} is op de {distance} m naar rank "
-                    f"{target_position} verplaatst met tijd "
-                    f"{format_time(new_time)}."
+                    f"{skater.name} now has rank {target_position} "
+                    f"in the {distance} m, with a time of {format_time(new_time)}."
                 )
 
             elif choice == "7":
                 pass
 
-            print("\nAANPASSING VERWERKT — NIEUW TOTAALOVERZICHT")
+            print("\nCHANGES SAVED — UPDATED RESULTS AND STANDINGS")
             print("=" * 92)
             print_complete_overview(
                 skaters=skaters,
@@ -2735,7 +2728,7 @@ def print_competition_header(config: TournamentConfig) -> None:
         if config.force_outside_top_x_longest_top_y:
             print(
                 "TOP-X TRAP:          "
-                f"yes: outside top-{config.overall_rank_limit} klassement, "
+                f"yes: outside top {config.overall_rank_limit} in the classification, "
                 f"top-{config.qualification_limit} in longest distance"
             )
         else:
@@ -2998,7 +2991,7 @@ def print_script_input(
     skater_data: list[tuple[int, int, str, int]],
 ) -> None:
     print(
-        "\nINPUT VOOR HET BESTAANDE "
+        "\nINPUT FOR THE EXISTING "
         "FOURTH-DISTANCE SCRIPT"
     )
     print("skater_data = [")
@@ -3021,50 +3014,28 @@ def generate_exercises(
     longest_completed_distance = max(config.distances[:3])
 
     exercises = [
-        (
-            "1. Controleer het tussenklassement na twee afstanden. "
-            "Bepaal of de rangschikking en de totaalpunten correct zijn."
-        ),
-        (
-            "2. Based on the classification after two distances, determine "
-            "the pairing/order for the third distance."
-        ),
-        (
-            "3. Check the classification after three distances. "
-            "Let daarbij op ex aequo's en niet-geklasseerde deelnemers."
-        ),
-        (
-            f"4. Selecteer {config.qualification_limit} deelnemers voor "
-            f"de vierde afstand op basis van het tussenklassement en de "
-            f"uitslag van de {longest_completed_distance} meter."
-        ),
-        (
-            f"5. Stel een reservelijst met {config.reserve_count} "
-            "deelnemers op en motiveer de volgorde."
-        ),
-        (
-            "6. Prepare the start list for the fourth distance and explain "
-            "how you determined the pairs and starting order."
-        ),
+        "Check the classification after two distances, including ranks and total points.",
+        "Determine the pairings and starting order for the third distance.",
+        "Check the classification after three distances, including ties and unclassified skaters.",
+        f"Select {config.qualification_limit} skaters for the fourth distance. "
+        f"Use the classification and the {longest_completed_distance} m result.",
+        f"Make a reserve list of {config.reserve_count} skaters in the correct order and explain why.",
+        "Prepare the start list for the fourth distance. Explain the pairs and starting order.",
     ]
 
     if tie_messages:
         exercises.append(
-            "7. Leg per ex-aequorank uit welke aanvullende "
-            "beslisregel(s) nodig zijn om de situatie correct af te "
-            "handelen."
+            "Explain how any ties affect the ranking and selection."
         )
 
     if incident_messages:
         exercises.append(
-            "8. For each incident, assess whether the Skater is still "
-            "eligible to remain in the classification and/or for the fourth distance "
-            "selection."
+            "For each incident, explain if the skater is still eligible for "
+            "the classification and the fourth distance."
         )
 
     exercises.append(
-        "9. Formuleer welke controles je als scheidsrechter uitvoert "
-        "voordat je de startlijst ondertekent."
+        "Which checks should the referee make before signing the start list?"
     )
 
     return exercises
@@ -3141,28 +3112,28 @@ def save_text_report(
     lines: list[str] = []
     gender_label = "Women" if config.gender == "women" else "Men"
 
-    lines.append("GEGENEREERDE ALLROUND-OEFENCASUS")
+    lines.append("ALLROUND PRACTICE CASE — INSTRUCTOR REPORT")
     lines.append("=" * 92)
-    lines.append(f"Wedstrijd: {gender_label}")
+    lines.append(f"Category: {gender_label}")
     lines.append(
-        "Distanceen: "
+        "Distances: "
         + " - ".join(str(d) for d in config.distances)
     )
     lines.append(
-        f"Deelnemers vierde afstand: {config.qualification_limit}"
+        f"Skaters in the fourth distance: {config.qualification_limit}"
     )
     lines.append(f"Reserves: {config.reserve_count}")
-    lines.append(f"Seed/oefencasusnummer: {config.seed}")
+    lines.append(f"Case number (seed): {config.seed}")
     lines.append("")
 
     if incident_messages:
-        lines.append("INCIDENTEN")
+        lines.append("INCIDENTS")
         lines.append("-" * 92)
         lines.extend(incident_messages)
         lines.append("")
 
     if tie_messages:
-        lines.append("EX-AEQUOSCENARIO")
+        lines.append("TIE SCENARIO")
         lines.append("-" * 92)
         lines.extend(tie_messages)
         lines.append("")
@@ -3170,7 +3141,7 @@ def save_text_report(
     for number_of_distances in (2, 3):
         completed = config.distances[:number_of_distances]
         lines.append(
-            f"TUSSENKLASSEMENT NA {number_of_distances} AFSTANDEN"
+            f"CLASSIFICATION AFTER {number_of_distances} DISTANCES"
         )
         lines.append("-" * 92)
 
@@ -3208,14 +3179,14 @@ def save_text_report(
 
         lines.append("")
 
-    lines.append("SELECTIE VIERDE AFSTAND")
+    lines.append("SELECTION FOR THE FOURTH DISTANCE")
     lines.append("-" * 92)
 
     for index, skater in enumerate(selected, start=1):
         lines.append(
             f"{index}. {skater.bib} {skater.name} | "
-            f"klassement {skater.overall_rank_after_3} | "
-            f"langste afstand {skater.longest_distance_rank}"
+            f"classification rank {skater.overall_rank_after_3} | "
+            f"longest-distance rank {skater.longest_distance_rank}"
         )
 
     if reserves:
@@ -3226,12 +3197,12 @@ def save_text_report(
         for index, skater in enumerate(reserves, start=1):
             lines.append(
                 f"R{index}. {skater.bib} {skater.name} | "
-                f"klassement {skater.overall_rank_after_3} | "
-                f"langste afstand {skater.longest_distance_rank}"
+                f"classification rank {skater.overall_rank_after_3} | "
+                f"longest-distance rank {skater.longest_distance_rank}"
             )
 
     lines.append("")
-    lines.append("INPUT BESTAAND FOURTH-DISTANCE SCRIPT")
+    lines.append("INPUT FOR THE EXISTING FOURTH-DISTANCE SCRIPT")
     lines.append("-" * 92)
     lines.append("skater_data = [")
 
@@ -3340,11 +3311,10 @@ def main() -> None:
 
     if skaters is None:
         raise RuntimeError(
-            "Kon na "
-            f"{max_final_generation_attempts} pogingen geen casus maken "
-            "in which all requested selection challenges remain present after incidents "
-            "en ex-aequo's in de definitieve ranglijsten aanwezig zijn. "
-            "Try another practice case number or fewer incidents."
+            "Could not generate a case after "
+            f"{max_final_generation_attempts} attempts. The required selection "
+            "challenges were not present after incidents and ties. "
+            "Try another case number or fewer incidents."
         )
 
     selected, reserves = select_for_fourth_distance(
@@ -3419,8 +3389,8 @@ def main() -> None:
         # Dit zou door de definitieve validatie hierboven niet meer
         # mogen voorkomen.
         raise RuntimeError(
-            "Interne controlefout: de gevraagde top-X-selectievalkuil "
-            "ontbreekt onverwacht in de definitieve ranglijsten."
+            "Internal check failed: the requested top-X selection scenario "
+            "is missing from the final classification."
         )
 
     print_distance_results(
@@ -3520,8 +3490,8 @@ def main() -> None:
     print("\nKLAAR")
     print("=" * 92)
     print(
-        "Controleer oefencasussen altijd aan de hand van de actuele "
-        "the applicable ISU Rules and the relevant competition/qualification document."
+        "Always check practice cases against the current ISU Rules "
+        "and the competition-specific qualification documents."
     )
 
 

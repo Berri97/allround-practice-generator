@@ -1,0 +1,36 @@
+ALLROUND PRACTICE CASE GENERATOR — ENGLISH UPDATE
+
+This update changes the displayed text to clear, simple English. The calculations,
+ranking logic and selection logic are unchanged.
+
+FILES TO REPLACE IN YOUR GITHUB REPOSITORY
+  allround_practice_case_generator_v18_EN.py   (REQUIRED)
+  app.py                                      (INCLUDED; same Streamlit interface,
+                                               with a few minor text changes)
+
+Your existing requirements.txt does not need to change.
+
+HOW TO UPDATE
+1. Unzip this folder on your computer.
+2. Open your private GitHub repository: berri97/allround-practice-generator
+3. Use Add file -> Upload files to upload BOTH Python files into the main folder.
+4. Commit the changes, replacing the files with the same names.
+5. Streamlit Community Cloud should automatically redeploy the updated app.
+6. Open your website, generate a NEW case and download the instructor TXT and JSON.
+   Previously downloaded reports will not be changed.
+
+CHANGES
+- English headings, selections and reserve labels in the instructor report
+- English incident messages (DNS, DNF, DQ and WDR)
+- English tie messages, explanations, diagnostics, errors and practice questions
+- English prompts in the standalone command-line version
+- Original formulae and selection calculation logic unchanged
+
+CHECKS PERFORMED
+- Both Python files passed syntax compilation.
+- Six different cases were generated and compared to the original calculation code.
+- No changes found in skater results, selections or reserve lists for those cases.
+- TXT and JSON exports were scanned for Dutch phrases in those cases.
+
+IMPORTANT: Always check the generated cases against the current ISU Rules and the
+competition-specific qualification documents.

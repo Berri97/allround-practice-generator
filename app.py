@@ -1,4 +1,4 @@
-"""Allround Practice Case Generator — Streamlit front end for v18.
+"""Allround Practice Case Generator — Streamlit web interface for v18.
 
 Keep allround_practice_case_generator_v18_EN.py in the same directory.
 The v18 calculation and selection functions remain the source of truth.
@@ -106,7 +106,7 @@ def generate_case(config: gen.TournamentConfig) -> dict:
 
 
 def english_exercises(config: gen.TournamentConfig, case: dict) -> list[str]:
-    """English presentation of the practice questions generated in v18."""
+    """Clear English questions for the student and instructor exports."""
     longest = max(config.distances[:3])
     questions = [
         "Verify the classification after two distances, including ranks and total points.",
@@ -220,7 +220,7 @@ def practice_text(case: dict) -> bytes:
 def instructor_exports(case: dict) -> tuple[bytes, bytes]:
     config = case["config"]
     exercises = english_exercises(config, case)
-    # The original exporter is deliberately reused to retain the v18 data format.
+    # Reuse the English-language v18 exporter to preserve the data format.
     with tempfile.TemporaryDirectory() as directory:
         p = Path(directory)
         json_path = gen.save_json(
@@ -308,6 +308,7 @@ st.caption("Practice the fourth-distance selection in an Allround Combination. B
 
 with st.sidebar:
     st.header("Create a case")
+    # Settings stay outside a Streamlit form so dependent controls react immediately.
     with st.container():
         gender_label = st.radio("Category", ["Men", "Women"], horizontal=True)
         gender = gender_label.lower()
