@@ -1,9 +1,8 @@
 
 """Allround Practice Case Generator - Streamlit web app.
 
-Keep allround_practice_case_generator_v18_EN.py in the same
-GitHub repository. The generator handles all competition
-calculations and fourth-distance selection rules.
+Keep allround_practice_case_generator_v18_EN.py
+in the same GitHub repository.
 """
 
 from __future__ import annotations
@@ -27,7 +26,6 @@ st.set_page_config(
     layout="wide",
 )
 
-
 TIE_LABELS = {
     "No forced tie": "none",
     "Tie in classification after three distances": "classification",
@@ -42,8 +40,6 @@ TIE_LABELS = {
 # ============================================================
 
 def generate_case(config: gen.TournamentConfig) -> dict:
-    """Generate a case using the existing v18 rules."""
-
     rng = random.Random(config.seed)
     skaters = None
     incident_messages = []
@@ -51,25 +47,21 @@ def generate_case(config: gen.TournamentConfig) -> dict:
     pending_fourth_incidents = []
 
     for _ in range(150):
-
-        candidate = (
-            gen.create_initial_skaters_with_selection_challenge(
-                config, rng
-            )
+        candidate = gen.create_initial_skaters_with_selection_challenge(
+            config, rng
         )
 
         candidate_incidents = []
         candidate_pending = []
 
         if config.simulate_incidents:
-            (
-                candidate_incidents,
-                candidate_pending,
-            ) = gen.simulate_incidents(
-                candidate,
-                config.distances,
-                config.incident_count,
-                rng,
+            candidate_incidents, candidate_pending = (
+                gen.simulate_incidents(
+                    candidate,
+                    config.distances,
+                    config.incident_count,
+                    rng,
+                )
             )
 
         gen.recalculate_all(candidate, config.distances)
@@ -112,8 +104,8 @@ def generate_case(config: gen.TournamentConfig) -> dict:
     if skaters is None:
         raise RuntimeError(
             "No valid case could be generated. "
-            "Try another case number, fewer incidents "
-            "or less restrictive options."
+            "Try another case number, fewer incidents, "
+            "or less restrictive settings."
         )
 
     selected, reserves = gen.select_for_fourth_distance(
@@ -148,8 +140,6 @@ def generate_case(config: gen.TournamentConfig) -> dict:
 
 
 def recalculate_selection(case: dict) -> None:
-    """Recalculate standings and selection after edits."""
-
     config = case["config"]
 
     gen.recalculate_all(
@@ -170,11 +160,10 @@ def recalculate_selection(case: dict) -> None:
 
 
 # ============================================================
-# EXERCISE QUESTIONS
+# PRACTICE QUESTIONS
 # ============================================================
 
 def english_exercises(config, case) -> list[str]:
-
     longest = max(config.distances[:3])
 
     questions = [
@@ -188,12 +177,11 @@ def english_exercises(config, case) -> list[str]:
         "including ties and unclassified skaters.",
 
         f"Select {config.qualification_limit} skaters for "
-        f"the fourth distance, considering both the "
-        f"overall classification and the {longest} m result.",
+        f"the fourth distance, considering the overall "
+        f"classification and the {longest} m result.",
 
         f"Prepare an ordered reserve list of "
-        f"{config.reserve_count} skaters and explain "
-        f"your choices.",
+        f"{config.reserve_count} skaters.",
 
         "Prepare the start list for the fourth distance. "
         "Explain the pairings and starting order.",
@@ -207,8 +195,8 @@ def english_exercises(config, case) -> list[str]:
 
     if case["incident_messages"]:
         questions.append(
-            "For each incident, assess the consequences "
-            "for eligibility and selection."
+            "Explain how each incident affects "
+            "eligibility and selection."
         )
 
     questions.append(
@@ -220,23 +208,21 @@ def english_exercises(config, case) -> list[str]:
 
 
 # ============================================================
-# RESULTS AND CLASSIFICATION TABLES
+# RESULTS AND CLASSIFICATIONS
 # ============================================================
 
 def distance_table(case, distance):
-
     rows = []
 
     for s in case["skaters"]:
-
         status = s.statuses[distance]
 
-        if status == "OK":
-            result = gen.format_time(s.times[distance])
-        elif status == "N/A":
-            result = "-"
-        else:
-            result = status
+        result = (
+            gen.format_time(s.times[distance])
+            if status == "OK"
+            else "-" if status == "N/A"
+            else status
+        )
 
         rows.append({
             "Rank": s.distance_ranks.get(distance),
@@ -262,7 +248,6 @@ def distance_table(case, distance):
 
 
 def classification_table(case, count):
-
     rows = []
 
     ordered = sorted(
@@ -273,7 +258,6 @@ def classification_table(case, count):
     )
 
     for s in ordered:
-
         if count == 2:
             rank = s.overall_rank_after_2
             total = s.total_points_after_2
@@ -293,9 +277,7 @@ def classification_table(case, count):
             )
 
         row["Total points"] = (
-            f"{total:.3f}"
-            if total is not None
-            else "-"
+            f"{total:.3f}" if total is not None else "-"
         )
 
         rows.append(row)
@@ -304,16 +286,15 @@ def classification_table(case, count):
 
 
 def selection_table(skaters):
-
     return pd.DataFrame([
         {
-            "No.": index,
+            "No.": i,
             "Bib": s.bib,
             "Skater": s.name,
             "Classification rank": s.overall_rank_after_3,
             "Longest-distance rank": s.longest_distance_rank,
         }
-        for index, s in enumerate(skaters, start=1)
+        for i, s in enumerate(skaters, start=1)
     ])
 
 
@@ -323,17 +304,13 @@ def selection_table(skaters):
 
 def official_start_list(case):
     """
-    Create the instructor answer key for the fourth distance.
+    Use the pairing model from the supplied draw script.
 
-    This follows the pairing model from the supplied
-    fourth-distance draw script.
+    The teaching model sorts by classification rank
+    and longest-distance rank, forms pairs, and reverses
+    the pair order.
 
-    Skaters are sorted by classification rank, then
-    by longest-distance rank. Adjacent skaters are
-    paired and the pair order is reversed.
-
-    This teaching model must be checked against the
-    applicable ISU rules and event instructions.
+    Check this model against the applicable ISU rules.
     """
 
     ranked = sorted(
@@ -342,11 +319,9 @@ def official_start_list(case):
             s.overall_rank_after_3
             if s.overall_rank_after_3 is not None
             else 999,
-
             s.longest_distance_rank
             if s.longest_distance_rank is not None
             else 999,
-
             s.bib,
         ),
     )
@@ -354,48 +329,291 @@ def official_start_list(case):
     pairs = []
 
     for i in range(0, len(ranked), 2):
-
         inner = ranked[i]
-
         outer = (
             ranked[i + 1]
             if i + 1 < len(ranked)
             else None
         )
-
         pairs.append((inner, outer))
 
     pairs.reverse()
-
     return pairs
 
 
 def start_list_table(case):
-
-    rows = []
-
-    for number, (inner, outer) in enumerate(
-        official_start_list(case),
-        start=1,
-    ):
-
-        rows.append({
-            "Pair": number,
+    return pd.DataFrame([
+        {
+            "Pair": i,
             "Inner bib": inner.bib,
             "Inner skater": inner.name,
-            "Outer bib": (
-                outer.bib if outer else "-"
-            ),
-            "Outer skater": (
-                outer.name if outer else "Solo"
-            ),
-        })
-
-    return pd.DataFrame(rows)
+            "Outer bib": outer.bib if outer else "-",
+            "Outer skater": outer.name if outer else "Solo",
+        }
+        for i, (inner, outer) in enumerate(
+            official_start_list(case), start=1
+        )
+    ])
 
 
 # ============================================================
-# PARTICIPANT PAIR ANSWER CHECKING
+# SESSION STATE AND FEEDBACK
+# ============================================================
+
+def reset_pair_feedback(revision):
+    st.session_state[f"pair_feedback_{revision}"] = None
+    st.session_state[f"reveal_pairs_{revision}"] = False
+
+
+def reset_reserve_feedback(revision):
+    st.session_state.pop(
+        f"reserve_feedback_{revision}", None
+    )
+    st.session_state.pop(
+        f"reserve_reveal_{revision}", None
+    )
+
+
+def reset_exercise_feedback(revision):
+    reset_pair_feedback(revision)
+    reset_reserve_feedback(revision)
+    st.session_state["show_answer"] = False
+
+
+# ============================================================
+# RESERVE ANSWER CHECKING
+# ============================================================
+
+def evaluate_student_reserves(
+    entries,
+    chosen_bibs,
+    case,
+):
+    """
+    Check both the reserve skaters and their order.
+    The v18 selection result is the answer key.
+    """
+
+    expected = [
+        s.bib for s in case["reserves"]
+    ]
+
+    submitted = [
+        bib for bib in entries
+        if bib is not None
+    ]
+
+    errors = []
+
+    if len(submitted) != len(set(submitted)):
+        errors.append(
+            "A skater cannot be selected more than once."
+        )
+
+    if set(submitted) & set(chosen_bibs):
+        errors.append(
+            "A skater cannot be both qualified and reserve."
+        )
+
+    blank_seen = False
+
+    for bib in entries:
+        if bib is None:
+            blank_seen = True
+        elif blank_seen:
+            errors.append(
+                "Fill reserve positions in order, without gaps."
+            )
+            break
+
+    if len(submitted) != len(expected):
+        errors.append(
+            f"Enter {len(expected)} reserve skater(s)."
+        )
+
+    if errors:
+        return {
+            "valid": False,
+            "correct_skaters": False,
+            "correct_order": False,
+            "correct_positions": 0,
+            "errors": errors,
+        }
+
+    correct_skaters = (
+        set(submitted) == set(expected)
+    )
+
+    correct_order = (
+        submitted == expected
+    )
+
+    correct_positions = sum(
+        a == b
+        for a, b in zip(submitted, expected)
+    )
+
+    return {
+        "valid": True,
+        "correct_skaters": correct_skaters,
+        "correct_order": correct_order,
+        "correct_positions": correct_positions,
+        "errors": [],
+    }
+
+
+# ============================================================
+# PARTICIPANT - RESERVE EXERCISE
+# ============================================================
+
+def reserve_exercise(case, eligible, chosen):
+    config = case["config"]
+    revision = st.session_state["revision"]
+
+    st.subheader("Reserve selection")
+
+    if config.reserve_count == 0:
+        st.info(
+            "No reserves are required for this case."
+        )
+        return
+
+    st.write(
+        "Select the reserve skaters **in the correct order**. "
+        "Reserve 1 is the first skater who can replace "
+        "a withdrawn skater."
+    )
+
+    st.caption(
+        "Leave the last position(s) empty only if "
+        "there are not enough eligible reserve skaters."
+    )
+
+    bib_names = {
+        s.bib: s.name
+        for s in eligible
+    }
+
+    options = [None] + sorted(bib_names)
+
+    def display_skater(bib):
+        if bib is None:
+            return "— Choose skater —"
+        return f"{bib} — {bib_names[bib]}"
+
+    entries = []
+
+    for position in range(
+        1, config.reserve_count + 1
+    ):
+        label_col, select_col = st.columns([1, 4])
+
+        with label_col:
+            st.markdown(
+                f"**Reserve {position}**"
+            )
+
+        with select_col:
+            bib = st.selectbox(
+                f"Reserve {position} skater",
+                options,
+                format_func=display_skater,
+                key=f"reserve_{revision}_{position}",
+                label_visibility="collapsed",
+                on_change=reset_reserve_feedback,
+                args=(revision,),
+            )
+
+        entries.append(bib)
+
+    if st.button(
+        "Check my reserves",
+        type="primary",
+        key=f"check_reserves_{revision}",
+    ):
+        result = evaluate_student_reserves(
+            entries, chosen, case
+        )
+
+        st.session_state[
+            f"reserve_feedback_{revision}"
+        ] = result
+
+        st.session_state[
+            f"reserve_reveal_{revision}"
+        ] = False
+
+    feedback = st.session_state.get(
+        f"reserve_feedback_{revision}"
+    )
+
+    if feedback is not None:
+        if feedback["errors"]:
+            for error in feedback["errors"]:
+                st.warning(error)
+
+        elif feedback["correct_order"]:
+            st.success(
+                "Correct! You selected the right reserves "
+                "in the correct order."
+            )
+
+        elif feedback["correct_skaters"]:
+            st.warning(
+                "You selected the right reserves, "
+                "but the order is not correct."
+            )
+
+        else:
+            st.warning(
+                "The reserve skaters are not all correct. "
+                "Check your selection."
+            )
+
+        if st.button(
+            "Show correct reserve order",
+            key=f"show_reserves_{revision}",
+        ):
+            st.session_state[
+                f"reserve_reveal_{revision}"
+            ] = True
+
+    if st.session_state.get(
+        f"reserve_reveal_{revision}", False
+    ):
+        st.subheader("Correct reserve order")
+
+        answer = selection_table(
+            case["reserves"]
+        )
+
+        if answer.empty:
+            st.info(
+                "No eligible reserves are available."
+            )
+        else:
+            answer["Reserve"] = [
+                f"R{i}"
+                for i in range(1, len(answer) + 1)
+            ]
+
+            st.dataframe(
+                answer[
+                    [
+                        "Reserve",
+                        "Bib",
+                        "Skater",
+                        "Classification rank",
+                        "Longest-distance rank",
+                    ]
+                ],
+                hide_index=True,
+                use_container_width=True,
+            )
+
+
+# ============================================================
+# PAIR ANSWER CHECKING
 # ============================================================
 
 def evaluate_student_pairs(
@@ -403,20 +621,13 @@ def evaluate_student_pairs(
     chosen_bibs,
     case,
 ):
-    """
-    Check the number of pairs, skater selection,
-    pair order and lane assignments.
-    """
-
     required = len(case["selected"])
     expected_count = (required + 1) // 2
-
     errors = []
 
     if len(chosen_bibs) != required:
         errors.append(
-            f"First select {required} skaters "
-            "for the fourth distance."
+            f"First select {required} skaters."
         )
 
     if len(entries) != expected_count:
@@ -431,21 +642,22 @@ def evaluate_student_pairs(
         if bib is not None
     ]
 
-    if any(inner is None for inner, outer in entries):
+    if any(
+        inner is None
+        for inner, outer in entries
+    ):
         errors.append(
-            "Choose an inner-lane skater for every pair."
+            "Every pair needs an inner-lane skater."
         )
 
     if len(all_bibs) != len(set(all_bibs)):
         errors.append(
-            "A skater can only appear once "
-            "in the start list."
+            "A skater can only appear once."
         )
 
     if len(all_bibs) != required:
         errors.append(
-            f"Enter all {required} skaters "
-            "in the start list."
+            f"Enter all {required} skaters."
         )
 
     if (
@@ -475,7 +687,9 @@ def evaluate_student_pairs(
 
     correct_count = sum(
         entered == correct
-        for entered, correct in zip(entries, expected)
+        for entered, correct in zip(
+            entries, expected
+        )
     )
 
     correct_selection = (
@@ -500,50 +714,29 @@ def evaluate_student_pairs(
 # ============================================================
 
 def prepare_pair_editor(revision):
-    """
-    Start with one empty pair.
-    Keep row IDs stable when Streamlit reruns.
-    """
-
     rows_key = f"practice_pair_rows_{revision}"
     next_key = f"practice_pair_next_id_{revision}"
 
     if rows_key not in st.session_state:
-
         st.session_state[rows_key] = [0]
         st.session_state[next_key] = 1
 
     return rows_key, next_key
 
 
-def reset_pair_feedback(revision):
-
-    st.session_state[
-        f"pair_feedback_{revision}"
-    ] = None
-
-    st.session_state[
-        f"reveal_pairs_{revision}"
-    ] = False
-
-
 def add_student_pair(revision):
-
     rows_key, next_key = prepare_pair_editor(revision)
 
     new_id = st.session_state[next_key]
 
     st.session_state[rows_key].append(new_id)
-
     st.session_state[next_key] = new_id + 1
 
     reset_pair_feedback(revision)
 
 
 def remove_student_pair(revision):
-
     rows_key, _ = prepare_pair_editor(revision)
-
     rows = st.session_state[rows_key]
 
     if len(rows) <= 1:
@@ -565,20 +758,11 @@ def remove_student_pair(revision):
 
 
 def pair_exercise(case, eligible, chosen):
-    """
-    Participant creates the start list manually.
-
-    One pair is visible initially.
-    Additional pairs are added using the plus button.
-    """
-
     revision = st.session_state["revision"]
 
     rows_key, _ = prepare_pair_editor(revision)
 
-    st.subheader(
-        "Create the starting pairs"
-    )
+    st.subheader("Create the starting pairs")
 
     st.write(
         "Create the start list for the fourth distance. "
@@ -602,10 +786,8 @@ def pair_exercise(case, eligible, chosen):
     ]
 
     def display_skater(bib):
-
         if bib is None:
             return "— Choose skater —"
-
         return f"{bib} — {bib_names[bib]}"
 
     entered_pairs = []
@@ -614,18 +796,14 @@ def pair_exercise(case, eligible, chosen):
         st.session_state[rows_key],
         start=1,
     ):
-
         pair_col, inner_col, outer_col = st.columns(
             [1, 4, 4]
         )
 
         with pair_col:
-            st.markdown(
-                f"**Pair {number}**"
-            )
+            st.markdown(f"**Pair {number}**")
 
         with inner_col:
-
             inner = st.selectbox(
                 "Inner lane (I)",
                 possible_bibs,
@@ -636,7 +814,6 @@ def pair_exercise(case, eligible, chosen):
             )
 
         with outer_col:
-
             outer = st.selectbox(
                 "Outer lane (O)",
                 possible_bibs,
@@ -650,12 +827,9 @@ def pair_exercise(case, eligible, chosen):
             (inner, outer)
         )
 
-    st.divider()
-
     add_col, remove_col = st.columns(2)
 
     with add_col:
-
         st.button(
             "＋ Add pair",
             on_click=add_student_pair,
@@ -665,7 +839,6 @@ def pair_exercise(case, eligible, chosen):
         )
 
     with remove_col:
-
         st.button(
             "− Remove last pair",
             on_click=remove_student_pair,
@@ -677,18 +850,13 @@ def pair_exercise(case, eligible, chosen):
             use_container_width=True,
         )
 
-    st.divider()
-
     if st.button(
         "Check my starting pairs",
         type="primary",
         key=f"check_pairs_{revision}",
     ):
-
         result = evaluate_student_pairs(
-            entered_pairs,
-            chosen,
-            case,
+            entered_pairs, chosen, case
         )
 
         st.session_state[
@@ -704,21 +872,17 @@ def pair_exercise(case, eligible, chosen):
     )
 
     if feedback is not None:
-
         if feedback["errors"]:
-
             for error in feedback["errors"]:
                 st.warning(error)
 
         elif feedback["correct"]:
-
             st.success(
                 "Correct! All skaters, pairs "
                 "and lane positions are right."
             )
 
         else:
-
             st.warning(
                 f"{feedback['correct_count']} of "
                 f"{feedback['total_pairs']} pairs "
@@ -733,21 +897,16 @@ def pair_exercise(case, eligible, chosen):
 
         if st.button(
             "Show correct starting pairs",
-            key=f"reveal_pairs_button_{revision}",
+            key=f"show_pairs_{revision}",
         ):
-
             st.session_state[
                 f"reveal_pairs_{revision}"
             ] = True
 
     if st.session_state.get(
-        f"reveal_pairs_{revision}",
-        False,
+        f"reveal_pairs_{revision}", False
     ):
-
-        st.subheader(
-            "Correct starting pairs"
-        )
+        st.subheader("Correct starting pairs")
 
         st.dataframe(
             start_list_table(case),
@@ -757,19 +916,14 @@ def pair_exercise(case, eligible, chosen):
 
 
 # ============================================================
-# PARTICIPANT EXPORTS
+# EXPORTS
 # ============================================================
 
 def practice_csv(case):
-
-    config = case["config"]
-
     rows = []
 
-    for distance in config.distances[:3]:
-
+    for distance in case["config"].distances[:3]:
         for s in case["skaters"]:
-
             rows.append({
                 "distance_m": distance,
                 "bib": s.bib,
@@ -790,7 +944,6 @@ def practice_csv(case):
 
 
 def practice_text(case):
-
     config = case["config"]
 
     lines = [
@@ -806,7 +959,6 @@ def practice_text(case):
     ]
 
     for distance in config.distances[:3]:
-
         lines.extend([
             "",
             f"{distance} m",
@@ -816,7 +968,6 @@ def practice_text(case):
         table = distance_table(case, distance)
 
         for _, row in table.iterrows():
-
             rank = row["Rank"]
 
             rank_text = (
@@ -838,33 +989,20 @@ def practice_text(case):
         "-" * 65,
     ])
 
-    questions = english_exercises(config, case)
-
-    for number, question in enumerate(
-        questions, start=1
+    for i, question in enumerate(
+        english_exercises(config, case),
+        start=1,
     ):
-
-        lines.append(
-            f"{number}. {question}"
-        )
+        lines.append(f"{i}. {question}")
 
     return "\n".join(lines).encode("utf-8")
 
 
-# ============================================================
-# INSTRUCTOR EXPORTS
-# ============================================================
-
 def instructor_exports(case):
-
     config = case["config"]
-
-    exercises = english_exercises(
-        config, case
-    )
+    exercises = english_exercises(config, case)
 
     with tempfile.TemporaryDirectory() as directory:
-
         output_dir = Path(directory)
 
         json_path = gen.save_json(
@@ -899,14 +1037,12 @@ def instructor_exports(case):
             + "\n"
         )
 
-        for number, (inner, outer) in enumerate(
+        for i, (inner, outer) in enumerate(
             official_start_list(case),
             start=1,
         ):
-
             report += (
-                f"Pair {number}: "
-                f"I — {inner.bib} {inner.name} | "
+                f"Pair {i}: I — {inner.bib} {inner.name} | "
             )
 
             if outer:
@@ -943,7 +1079,6 @@ def instructor_exports(case):
 # ============================================================
 
 def edit_results(case):
-
     config = case["config"]
 
     distance = st.selectbox(
@@ -957,7 +1092,6 @@ def edit_results(case):
         case["skaters"],
         key=lambda x: x.bib,
     ):
-
         rows.append({
             "Bib": s.bib,
             "Skater": s.name,
@@ -979,16 +1113,11 @@ def edit_results(case):
             "Status": st.column_config.SelectboxColumn(
                 "Status",
                 options=[
-                    "OK",
-                    "DNS",
-                    "DNF",
-                    "DQ",
-                    "WDR",
-                    "N/A",
+                    "OK", "DNS", "DNF",
+                    "DQ", "WDR", "N/A",
                 ],
                 required=True,
             ),
-
             "Time (seconds)": (
                 st.column_config.NumberColumn(
                     "Time (seconds)",
@@ -1009,20 +1138,17 @@ def edit_results(case):
         "Save changes and recalculate",
         type="primary",
     ):
-
         changes = []
 
         for row in edited.to_dict(
             orient="records"
         ):
-
             bib = int(row["Bib"])
             status = row["Status"]
             raw = row["Time (seconds)"]
 
             time = (
-                None
-                if pd.isna(raw)
+                None if pd.isna(raw)
                 else round(float(raw), 2)
             )
 
@@ -1030,7 +1156,6 @@ def edit_results(case):
                 status in ("OK", "DQ")
                 and (time is None or time <= 0)
             ):
-
                 st.error(
                     f"Bib {bib}: a valid time is required."
                 )
@@ -1050,11 +1175,9 @@ def edit_results(case):
         }
 
         for bib, status, time in changes:
-
             skater = by_bib[bib]
 
             if status in {"DNS", "WDR"}:
-
                 gen.apply_incident_to_skater(
                     skater,
                     config.distances,
@@ -1063,12 +1186,10 @@ def edit_results(case):
                 )
 
             elif status in {"DNF", "N/A"}:
-
                 skater.statuses[distance] = status
                 skater.times[distance] = None
 
             else:
-
                 skater.statuses[distance] = status
                 skater.times[distance] = time
 
@@ -1096,9 +1217,7 @@ def edit_results(case):
 # USER INTERFACE
 # ============================================================
 
-st.title(
-    "⛸️ Allround Practice Case Generator"
-)
+st.title("⛸️ Allround Practice Case Generator")
 
 st.caption(
     "Practice the fourth-distance selection "
@@ -1107,11 +1226,10 @@ st.caption(
 
 
 # ============================================================
-# SIDEBAR - CASE SETTINGS
+# SIDEBAR
 # ============================================================
 
 with st.sidebar:
-
     st.header("Create a case")
 
     gender_label = st.radio(
@@ -1121,7 +1239,6 @@ with st.sidebar:
     )
 
     gender = gender_label.lower()
-
     presets = gen.DISTANCE_PRESETS[gender]
 
     preset = st.selectbox(
@@ -1143,22 +1260,18 @@ with st.sidebar:
         step=1,
     )
 
-    max_qualifiers = int(skaters_n) - 2
-
     qualifiers = st.number_input(
         "Skaters in fourth distance",
         min_value=2,
-        max_value=max_qualifiers,
-        value=min(8, max_qualifiers),
+        max_value=int(skaters_n) - 2,
+        value=min(8, int(skaters_n) - 2),
         step=1,
     )
 
     reserve_n = st.number_input(
         "Number of reserves",
         min_value=0,
-        max_value=(
-            int(skaters_n) - int(qualifiers)
-        ),
+        max_value=int(skaters_n) - int(qualifiers),
         value=min(
             2,
             int(skaters_n) - int(qualifiers),
@@ -1166,9 +1279,7 @@ with st.sidebar:
         step=1,
     )
 
-    st.markdown(
-        "**Selection restrictions**"
-    )
+    st.markdown("**Selection restrictions**")
 
     top_x = st.checkbox(
         "Apply classification top-X restriction"
@@ -1194,9 +1305,7 @@ with st.sidebar:
         ),
     )
 
-    st.markdown(
-        "**Practice scenarios**"
-    )
+    st.markdown("**Practice scenarios**")
 
     tie_label = st.selectbox(
         "Tie scenario",
@@ -1238,21 +1347,13 @@ with st.sidebar:
         use_container_width=True,
     )
 
-    st.caption(
-        "Generated cases are fictional. "
-        "Always check the applicable ISU Rules "
-        "and competition documents."
-    )
-
 
 # ============================================================
 # GENERATE CASE
 # ============================================================
 
 if submitted:
-
     try:
-
         case_seed = (
             int(seed_text.strip())
             if seed_text.strip()
@@ -1289,10 +1390,7 @@ if submitted:
             save_outputs=False,
         )
 
-        with st.spinner(
-            "Generating a realistic allround practice case..."
-        ):
-
+        with st.spinner("Generating practice case..."):
             case = generate_case(config)
 
         st.session_state["case"] = case
@@ -1304,25 +1402,17 @@ if submitted:
         st.session_state["show_answer"] = False
 
     except ValueError as exc:
-
-        st.error(
-            f"Invalid settings or case number: {exc}"
-        )
+        st.error(f"Invalid settings: {exc}")
 
     except Exception as exc:
-
-        st.error(
-            f"Could not generate the case: {exc}"
-        )
+        st.error(f"Could not generate the case: {exc}")
 
 
 if "case" not in st.session_state:
-
     st.info(
         "Choose your settings in the sidebar "
         "and click **Generate practice case**."
     )
-
     st.stop()
 
 
@@ -1337,20 +1427,12 @@ st.success(
 
 a, b, c = st.columns(3)
 
-a.metric(
-    "Skaters",
-    len(case["skaters"]),
-)
-
+a.metric("Skaters", len(case["skaters"]))
 b.metric(
     "Fourth-distance places",
     config.qualification_limit,
 )
-
-c.metric(
-    "Reserves",
-    config.reserve_count,
-)
+c.metric("Reserves", config.reserve_count)
 
 
 # ============================================================
@@ -1377,34 +1459,29 @@ c.metric(
 # ============================================================
 
 with results_tab:
-
     st.subheader(
         "Results — first three distances"
     )
 
     for distance in config.distances[:3]:
-
         with st.expander(
             f"{distance} m",
             expanded=(
                 distance == config.distances[0]
             ),
         ):
-
             st.dataframe(
                 distance_table(case, distance),
                 hide_index=True,
                 use_container_width=True,
             )
 
-    if case["incident_messages"] and not case["edited"]:
-
-        with st.expander(
-            "Simulated incident notes"
-        ):
-
+    if (
+        case["incident_messages"]
+        and not case["edited"]
+    ):
+        with st.expander("Simulated incidents"):
             for s in case["skaters"]:
-
                 issues = [
                     f"{d} m: {s.statuses[d]}"
                     for d in config.distances
@@ -1414,7 +1491,6 @@ with results_tab:
                 ]
 
                 if issues:
-
                     st.write(
                         f"Bib {s.bib} — {s.name}: "
                         + ", ".join(issues)
@@ -1426,7 +1502,6 @@ with results_tab:
 # ============================================================
 
 with standings_tab:
-
     st.subheader(
         "Classification after two distances"
     )
@@ -1449,11 +1524,10 @@ with standings_tab:
 
 
 # ============================================================
-# PARTICIPANT - SELECTION AND PAIRS
+# SELECTION EXERCISE
 # ============================================================
 
 with selection_tab:
-
     st.subheader(
         "Your fourth-distance selection"
     )
@@ -1470,12 +1544,10 @@ with selection_tab:
     )
 
     if config.apply_overall_rank_limit:
-
         st.info(
             f"Only skaters in the top "
             f"{config.overall_rank_limit} of the "
-            "classification after three distances "
-            "are eligible."
+            "classification are eligible."
         )
 
     eligible = sorted(
@@ -1501,7 +1573,7 @@ with selection_tab:
             f"practice_selection_"
             f"{st.session_state['revision']}"
         ),
-        on_change=reset_pair_feedback,
+        on_change=reset_exercise_feedback,
         args=(st.session_state["revision"],),
     )
 
@@ -1509,34 +1581,25 @@ with selection_tab:
         "Check my selection",
         type="primary",
     ):
-
         if len(chosen) != config.qualification_limit:
-
             st.warning(
                 f"Choose exactly "
                 f"{config.qualification_limit} skaters."
             )
-
         else:
-
             correct = {
-                s.bib
-                for s in case["selected"]
+                s.bib for s in case["selected"]
             }
 
             missing = correct - set(chosen)
-
             incorrect = set(chosen) - correct
 
             if not missing and not incorrect:
-
                 st.success(
                     "Correct selection! "
                     "You selected all qualifying skaters."
                 )
-
             else:
-
                 st.warning(
                     f"{len(missing)} qualifying skater(s) "
                     "are missing, and "
@@ -1547,13 +1610,11 @@ with selection_tab:
     if st.button(
         "Reveal official selection and reserves"
     ):
-
         st.session_state["show_answer"] = True
 
     if st.session_state.get(
         "show_answer", False
     ):
-
         st.subheader(
             "Answer key — selected skaters"
         )
@@ -1564,21 +1625,44 @@ with selection_tab:
             use_container_width=True,
         )
 
-        st.subheader("Reserves")
+        st.subheader("Correct reserve order")
 
         if case["reserves"]:
+            reserves_answer = selection_table(
+                case["reserves"]
+            )
+
+            reserves_answer["Reserve"] = [
+                f"R{i}"
+                for i in range(
+                    1, len(reserves_answer) + 1
+                )
+            ]
 
             st.dataframe(
-                selection_table(case["reserves"]),
+                reserves_answer[
+                    [
+                        "Reserve",
+                        "Bib",
+                        "Skater",
+                        "Classification rank",
+                        "Longest-distance rank",
+                    ]
+                ],
                 hide_index=True,
                 use_container_width=True,
             )
-
         else:
+            st.write("No reserves selected.")
 
-            st.write(
-                "No reserves selected."
-            )
+    st.divider()
+
+    # New ordered reserve exercise
+    reserve_exercise(
+        case,
+        eligible,
+        chosen,
+    )
 
     st.divider()
 
@@ -1592,12 +1676,10 @@ with selection_tab:
     with st.expander(
         "Practice questions"
     ):
-
         for number, question in enumerate(
             english_exercises(config, case),
             start=1,
         ):
-
             st.write(
                 f"{number}. {question}"
             )
@@ -1608,7 +1690,6 @@ with selection_tab:
 # ============================================================
 
 with edit_tab:
-
     st.subheader(
         "Edit results and recalculate"
     )
@@ -1626,7 +1707,6 @@ with edit_tab:
 # ============================================================
 
 with downloads_tab:
-
     st.subheader(
         "Participant materials"
     )
@@ -1664,9 +1744,8 @@ with downloads_tab:
     if st.checkbox(
         "Show instructor materials"
     ):
-
-        st.markdown(
-            "**Official start list — fourth distance**"
+        st.subheader(
+            "Official start list — fourth distance"
         )
 
         st.dataframe(
@@ -1674,6 +1753,17 @@ with downloads_tab:
             hide_index=True,
             use_container_width=True,
         )
+
+        st.subheader(
+            "Official reserve order"
+        )
+
+        if case["reserves"]:
+            st.dataframe(
+                selection_table(case["reserves"]),
+                hide_index=True,
+                use_container_width=True,
+            )
 
         full_txt, full_json = instructor_exports(case)
 
@@ -1697,7 +1787,7 @@ with downloads_tab:
 
     st.info(
         "Use the same case number and settings "
-        "to recreate the original generated case. "
+        "to recreate the original case. "
         "Manual edits are not included in the case number."
     )
 
