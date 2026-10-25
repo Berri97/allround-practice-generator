@@ -944,30 +944,57 @@ def practice_csv(case):
 
 
 def practice_text(case):
+    """
+    Create a participant worksheet with:
+    - Competition information
+    - Race results for the first three distances
+    - Classification after two distances
+    - Classification after three distances
+    - Practice questions
+    """
+
     config = case["config"]
 
     lines = [
-        "ALLROUND PRACTICE CASE — PARTICIPANT WORKSHEET",
-        "=" * 65,
+        "ALLROUND PRACTICE CASE - PARTICIPANT WORKSHEET",
+        "=" * 90,
         f"Category: {config.gender.title()}",
         f"Distances: {' / '.join(map(str, config.distances))} m",
+        f"Skaters: {len(case['skaters'])}",
         f"Skaters in fourth distance: {config.qualification_limit}",
         f"Reserves: {config.reserve_count}",
         f"Case number: {config.seed}",
         "",
-        "RESULTS OF THE FIRST THREE DISTANCES",
     ]
 
+    if config.apply_overall_rank_limit:
+        lines.append(
+            "Classification top-X restriction: "
+            f"Top {config.overall_rank_limit}"
+        )
+        lines.append("")
+
+    # --------------------------------------------------------
+    # RACE RESULTS - FIRST THREE DISTANCES
+    # --------------------------------------------------------
+
+    lines.extend([
+        "RACE RESULTS - FIRST THREE DISTANCES",
+        "=" * 90,
+    ])
+
     for distance in config.distances[:3]:
+
         lines.extend([
             "",
             f"{distance} m",
-            "-" * 65,
+            "-" * 90,
         ])
 
         table = distance_table(case, distance)
 
         for _, row in table.iterrows():
+
             rank = row["Rank"]
 
             rank_text = (
@@ -980,22 +1007,74 @@ def practice_text(case):
                 f"{rank_text:>3} | "
                 f"{int(row['Bib']):>3} | "
                 f"{row['Skater']:<26} | "
-                f"{row['Time / status']}"
+                f"{row['Time / status']:>12} | "
+                f"{row['Points']:>8}"
             )
+
+    # --------------------------------------------------------
+    # CLASSIFICATIONS AFTER TWO AND THREE DISTANCES
+    # --------------------------------------------------------
+
+    for count in (2, 3):
+
+        lines.extend([
+            "",
+            "",
+            f"CLASSIFICATION AFTER {count} DISTANCES",
+            "=" * 90,
+            "",
+        ])
+
+        table = classification_table(case, count).copy()
+
+        # Display ranks as whole numbers, not 1.0, 2.0, etc.
+        table["Rank"] = table["Rank"].apply(
+            lambda value: (
+                "-"
+                if pd.isna(value)
+                else str(int(value))
+            )
+        )
+
+        # Use a dash for missing values.
+        table = table.fillna("-")
+
+        # Use the same standings as shown in the app.
+        lines.append(
+            table.to_string(
+                index=False,
+                justify="left",
+            )
+        )
+
+    # --------------------------------------------------------
+    # PRACTICE QUESTIONS
+    # --------------------------------------------------------
 
     lines.extend([
         "",
+        "",
         "PRACTICE QUESTIONS",
-        "-" * 65,
+        "=" * 90,
+        "",
     ])
 
-    for i, question in enumerate(
-        english_exercises(config, case),
+    questions = english_exercises(config, case)
+
+    for number, question in enumerate(
+        questions,
         start=1,
     ):
-        lines.append(f"{i}. {question}")
+        lines.append(
+            f"{number}. {question}"
+        )
 
-    return "\n".join(lines).encode("utf-8")
+    lines.extend([
+        "",
+        "-" * 90,
+        "Check your answers against the applicable "
+        "ISU Rules and competition instructions.",
+    ])
 
 
 def instructor_exports(case):
