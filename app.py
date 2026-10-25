@@ -943,15 +943,9 @@ def practice_csv(case):
     )
 
 
+
 def practice_text(case):
-    """
-    Create a participant worksheet with:
-    - Competition information
-    - Race results for the first three distances
-    - Classification after two distances
-    - Classification after three distances
-    - Practice questions
-    """
+    """Create the complete participant worksheet."""
 
     config = case["config"]
 
@@ -960,25 +954,21 @@ def practice_text(case):
         "=" * 90,
         f"Category: {config.gender.title()}",
         f"Distances: {' / '.join(map(str, config.distances))} m",
-        f"Skaters: {len(case['skaters'])}",
-        f"Skaters in fourth distance: {config.qualification_limit}",
-        f"Reserves: {config.reserve_count}",
+        f"Number of skaters: {len(case['skaters'])}",
+        f"Fourth-distance places: {config.qualification_limit}",
+        f"Number of reserves: {config.reserve_count}",
         f"Case number: {config.seed}",
         "",
     ]
 
     if config.apply_overall_rank_limit:
         lines.append(
-            "Classification top-X restriction: "
-            f"Top {config.overall_rank_limit}"
+            f"Classification restriction: Top {config.overall_rank_limit}"
         )
-        lines.append("")
 
-    # --------------------------------------------------------
-    # RACE RESULTS - FIRST THREE DISTANCES
-    # --------------------------------------------------------
-
+    # RACE RESULTS
     lines.extend([
+        "",
         "RACE RESULTS - FIRST THREE DISTANCES",
         "=" * 90,
     ])
@@ -993,28 +983,14 @@ def practice_text(case):
 
         table = distance_table(case, distance)
 
-        for _, row in table.iterrows():
-
-            rank = row["Rank"]
-
-            rank_text = (
-                "-"
-                if pd.isna(rank)
-                else str(int(rank))
+        lines.append(
+            table.to_string(
+                index=False,
+                na_rep="-",
             )
+        )
 
-            lines.append(
-                f"{rank_text:>3} | "
-                f"{int(row['Bib']):>3} | "
-                f"{row['Skater']:<26} | "
-                f"{row['Time / status']:>12} | "
-                f"{row['Points']:>8}"
-            )
-
-    # --------------------------------------------------------
-    # CLASSIFICATIONS AFTER TWO AND THREE DISTANCES
-    # --------------------------------------------------------
-
+    # CLASSIFICATIONS
     for count in (2, 3):
 
         lines.extend([
@@ -1022,12 +998,10 @@ def practice_text(case):
             "",
             f"CLASSIFICATION AFTER {count} DISTANCES",
             "=" * 90,
-            "",
         ])
 
         table = classification_table(case, count).copy()
 
-        # Display ranks as whole numbers, not 1.0, 2.0, etc.
         table["Rank"] = table["Rank"].apply(
             lambda value: (
                 "-"
@@ -1036,21 +1010,14 @@ def practice_text(case):
             )
         )
 
-        # Use a dash for missing values.
-        table = table.fillna("-")
-
-        # Use the same standings as shown in the app.
         lines.append(
             table.to_string(
                 index=False,
-                justify="left",
+                na_rep="-",
             )
         )
 
-    # --------------------------------------------------------
     # PRACTICE QUESTIONS
-    # --------------------------------------------------------
-
     lines.extend([
         "",
         "",
@@ -1065,16 +1032,18 @@ def practice_text(case):
         questions,
         start=1,
     ):
-        lines.append(
-            f"{number}. {question}"
-        )
+        lines.append(f"{number}. {question}")
 
     lines.extend([
         "",
         "-" * 90,
-        "Check your answers against the applicable "
-        "ISU Rules and competition instructions.",
+        "Check the applicable ISU Rules and competition instructions.",
     ])
+
+    # IMPORTANT: Return the complete text as UTF-8 bytes.
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
 
 
 def instructor_exports(case):
